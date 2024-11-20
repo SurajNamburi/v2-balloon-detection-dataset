@@ -24,7 +24,13 @@ object_detection_project/
    git clone https://github.com/SurajNamburi/v2-balloon-detection-dataset.git
    cd v2-balloon-detection-dataset
 
-2. **Run the Program:**
+2. **Install Dependencies**
+pip install numpy pandas opencv-python scikit-image scikit-learn joblib 
+
+
+
+
+4. **Run the Program:**
    python src/object_detection.py --csv data/balloon-data.csv --images data/images/ --model_dir models/ --log logs/experiment_log.txt --C 0.01 --kernel linear
 
 Parameters:
