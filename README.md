@@ -4,15 +4,15 @@ This repository contains the V2 Balloon Detection Dataset used for the Object De
 
 ## Dataset Structure
 
-object_detection_project/ -
-├── data/ -
-│   ├── images/ -
-│   └── balloon-data.csv -
-├── logs/ - 
-│   └── experiment_log.txt -
-├── src/ -
-│   └── object_detection.py -
-└── README.md -
+object_detection_project/
+├── data/
+│   ├── images/
+│   └── balloon-data.csv
+├── logs/
+│   └── experiment_log.txt
+├── src/
+│   └── object_detection.py
+└── README.md
 
 
 ## How to Download and Extract
