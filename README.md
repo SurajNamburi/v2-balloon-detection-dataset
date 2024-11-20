@@ -7,15 +7,13 @@ This repository contains the V2 Balloon Detection Dataset used for the Object De
 object_detection_project/
 ├── data/
 │   ├── images/
-│   │   ├── image1.jpg
-│   │   ├── image2.jpg
-│   │   └── ...
-│   └── balloon-data.csv
+│   └── balloon-data.csv 
 ├── logs/
 │   └── experiment_log.txt
 ├── src/
 │   └── object_detection.py
 └── README.md
+
 
 ## How to Download and Extract
 
@@ -25,13 +23,17 @@ object_detection_project/
    cd v2-balloon-detection-dataset
 
 2. **Install Dependencies:**
-pip install numpy pandas opencv-python scikit-image scikit-learn joblib 
+pip install numpy pandas opencv-python scikit-image scikit-learn joblib opencv-python requests
 
 
 3. **Run the Program:**
-   python src/object_detection.py --csv data/balloon-data.csv --images data/images/ --model_dir models/ --log logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000
+   python object_detection.py --csv ../data/balloon-data.csv --model_dir ../models/ --log ../logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000
 
 Parameters:
---lr (Learning Rate)
---lambda_param 0.01 (Regularization Parameter)
---n_iters 1000 (Number of Iterations)
+
+--csv: Path to the balloon-data.csv file.
+--model_dir: Directory where the trained model will be saved.
+--log: Path to the log file.
+--lr: Learning rate for the SVM classifier.
+--lambda_param: Regularization parameter for the SVM classifier.
+--n_iters: Number of iterations for SVM training.
