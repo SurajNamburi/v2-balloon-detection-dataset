@@ -1,3 +1,5 @@
+# src/object_detection.py
+
 import os
 import cv2
 import numpy as np
@@ -5,19 +7,35 @@ import pandas as pd
 import json
 import logging
 import argparse
+import requests
+from io import BytesIO
+import pickle
 from hog import extract_hog_features_manual
 from svm import LinearSVM
-import pickle
 
 
 def setup_logging(log_file):
+    """
+    Configures the logging settings.
+    """
     logging.basicConfig(filename=log_file,
                         filemode='a',
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         level=logging.DEBUG)  # Set to DEBUG for detailed logs
 
 
-def load_data(csv_path, images_dir):
+def load_data(csv_path, base_image_url):
+    """
+    Loads data by downloading images from GitHub.
+
+    Parameters:
+    - csv_path: Path to the balloon-data.csv file.
+    - base_image_url: Base URL to the GitHub raw images directory.
+
+    Returns:
+    - data: NumPy array of image data.
+    - labels: NumPy array of labels.
+    """
     df = pd.read_csv(csv_path)
     data = []
     labels = []
@@ -28,17 +46,26 @@ def load_data(csv_path, images_dir):
     for index, row in df.iterrows():
         fname = row['fname']
         num_balloons = row['num_balloons']
-        image_path = os.path.join(images_dir, fname)
-        image = cv2.imread(image_path)
-        if image is None:
-            logging.warning(f"Image {fname} not found.")
-            continue  # Skip if image is not found
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        height, width = row['height'], row['width']
+        # Construct the raw GitHub URL for the image
+        image_url = f"{base_image_url}/{fname}"
+
+        try:
+            response = requests.get(image_url)
+            response.raise_for_status()  # Raise an error for bad status codes
+            image_bytes = BytesIO(response.content)
+            image = cv2.imdecode(np.frombuffer(image_bytes.read(), np.uint8), cv2.IMREAD_COLOR)
+            if image is None:
+                logging.warning(f"Failed to decode image from URL: {image_url}")
+                continue
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            height, width = row['height'], row['width']
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error downloading image {fname} from {image_url}: {e}")
+            continue  # Skip to the next image
 
         # Parse bbox safely using json.loads
         try:
-            bbox_str = row['bbox'].replace("'", '"')  # Replace single quotes with double quotes
+            bbox_str = row['bbox'].replace("'", '"')  # Replace single quotes with double quotes for valid JSON
             bbox = json.loads(bbox_str)
         except json.JSONDecodeError as e:
             logging.error(f"JSON decode error for image {fname}: {e}")
@@ -98,6 +125,17 @@ def load_data(csv_path, images_dir):
 
 
 def evaluate_model(y_true, y_pred):
+    """
+    Evaluates the model using accuracy and RMSE.
+
+    Parameters:
+    - y_true: True labels.
+    - y_pred: Predicted labels.
+
+    Returns:
+    - accuracy: Classification accuracy.
+    - rmse: Root Mean Squared Error.
+    """
     accuracy = np.mean(y_true == y_pred)
     # RMSE is not typically used for classification, but included per project requirements
     rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
@@ -105,13 +143,19 @@ def evaluate_model(y_true, y_pred):
 
 
 def main(args):
+    """
+    Main function to execute the object detection pipeline.
+    """
     # Setup logging
     setup_logging(args.log)
     logging.info('Starting Object Detection Experiment')
 
+    # Define the base GitHub raw image URL
+    base_image_url = "https://raw.githubusercontent.com/SurajNamburi/v2-balloon-detection-dataset/main/data/images"
+
     # Load data
     logging.info('Loading data...')
-    data, labels = load_data(args.csv, args.images)
+    data, labels = load_data(args.csv, base_image_url)
     logging.info(f'Total samples loaded: {len(data)}')
     logging.info(f'Total labels loaded: {len(labels)}')
 
@@ -185,8 +229,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Balloon Object Detection using Manual HOG and SVM')
     parser.add_argument('--csv', type=str, default='../data/balloon-data.csv',
                         help='Path to the balloon-data.csv file')
-    parser.add_argument('--images', type=str, default='../data/images/',
-                        help='Directory containing images')
     parser.add_argument('--model_dir', type=str, default='../models/',
                         help='Directory to save the trained model')
     parser.add_argument('--log', type=str, default='../logs/experiment_log.txt',
@@ -204,3 +246,4 @@ if __name__ == "__main__":
     os.makedirs(os.path.dirname(args.log), exist_ok=True)
 
     main(args)
+
