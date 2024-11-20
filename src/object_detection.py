@@ -2,15 +2,20 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
-from skimage.feature import hog
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, mean_squared_error
-import joblib
-import argparse
-import logging
 import json
-import matplotlib.pyplot as plt
+import logging
+import argparse
+from hog import extract_hog_features_manual
+from svm import LinearSVM
+import pickle
+
+
+def setup_logging(log_file):
+    logging.basicConfig(filename=log_file,
+                        filemode='a',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        level=logging.DEBUG)  # Set to DEBUG for detailed logs
+
 
 def load_data(csv_path, images_dir):
     df = pd.read_csv(csv_path)
@@ -33,7 +38,8 @@ def load_data(csv_path, images_dir):
 
         # Parse bbox safely using json.loads
         try:
-            bbox = json.loads(row['bbox'].replace("'", '"'))  # Replace single quotes with double quotes for valid JSON
+            bbox_str = row['bbox'].replace("'", '"')  # Replace single quotes with double quotes
+            bbox = json.loads(bbox_str)
         except json.JSONDecodeError as e:
             logging.error(f"JSON decode error for image {fname}: {e}")
             bbox = []  # Treat as no bounding boxes
@@ -91,63 +97,11 @@ def load_data(csv_path, images_dir):
     return np.array(data, dtype=np.uint8), np.array(labels, dtype=np.int32)
 
 
-def extract_hog_features(images):
-    hog_features = []
-    for idx, image in enumerate(images):
-        try:
-            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        except cv2.error as e:
-            logging.error(f'Error converting image {idx} to grayscale: {e}')
-            continue  # Skip this image
-
-        try:
-            features = hog(gray,
-                          orientations=9,
-                          pixels_per_cell=(8, 8),
-                          cells_per_block=(2, 2),
-                          block_norm='L2-Hys',
-                          visualize=False,
-                          feature_vector=True)
-            hog_features.append(features)
-        except Exception as e:
-            logging.error(f'Error extracting HOG features from image {idx}: {e}')
-            continue  # Skip this image
-    return np.array(hog_features, dtype=np.float32)
-
-
-
-def train_svm(X_train, y_train, C=0.01, kernel='linear'):
-    clf = SVC(C=C, kernel=kernel, probability=True)
-    clf.fit(X_train, y_train)
-    return clf
-
-def sliding_window(image, clf, window_size=(64, 128), step_size=16):
-    detections = []
-    prob_scores = []
-    for y in range(0, image.shape[0] - window_size[1], step_size):
-        for x in range(0, image.shape[1] - window_size[0], step_size):
-            window = image[y:y + window_size[1], x:x + window_size[0]]
-            if window.shape[0] != window_size[1] or window.shape[1] != window_size[0]:
-                continue
-            features = extract_hog_features([window])
-            pred = clf.predict(features)
-            prob = clf.decision_function(features)
-            if pred == 1:
-                detections.append((x, y, window_size[0], window_size[1]))
-                prob_scores.append(prob)
-    return detections, prob_scores
-
-def evaluate_model(clf, X_test, y_test):
-    y_pred = clf.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    return acc, rmse
-
-def setup_logging(log_file):
-    logging.basicConfig(filename=log_file,
-                        filemode='a',
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
+def evaluate_model(y_true, y_pred):
+    accuracy = np.mean(y_true == y_pred)
+    # RMSE is not typically used for classification, but included per project requirements
+    rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
+    return accuracy, rmse
 
 
 def main(args):
@@ -171,7 +125,15 @@ def main(args):
 
     # Feature extraction
     logging.info('Extracting HOG features...')
-    features = extract_hog_features(data)
+    features = []
+    for idx, img in enumerate(data):
+        try:
+            hog_feat = extract_hog_features_manual(img)
+            features.append(hog_feat)
+        except Exception as e:
+            logging.error(f'Error extracting HOG features from sample {idx}: {e}')
+            continue  # Skip this sample
+    features = np.array(features, dtype=np.float32)
     logging.info(f'Features shape: {features.shape}')
 
     if len(features) == 0:
@@ -187,6 +149,7 @@ def main(args):
 
     # Split data
     logging.info('Splitting data into train and test sets...')
+    from sklearn.model_selection import train_test_split
     X_train, X_test, y_train, y_test = train_test_split(features, labels,
                                                         test_size=0.2,
                                                         random_state=42,
@@ -195,24 +158,31 @@ def main(args):
 
     # Train SVM
     logging.info('Training SVM classifier...')
-    clf = train_svm(X_train, y_train, C=args.C, kernel=args.kernel)
+    svm = LinearSVM(learning_rate=args.lr, lambda_param=args.lambda_param, n_iters=args.n_iters)
+    svm.fit(X_train, y_train)
     logging.info('SVM training completed.')
+
+    # Predict on test data
+    logging.info('Predicting on test data...')
+    predictions = svm.predict(X_test)
 
     # Evaluate
     logging.info('Evaluating the model...')
-    acc, rmse = evaluate_model(clf, X_test, y_test)
+    acc, rmse = evaluate_model(y_test, predictions)
     logging.info(f'Test Accuracy: {acc * 100:.2f}%')
     logging.info(f'Test RMSE: {rmse:.2f}')
 
     # Save the model
-    model_path = os.path.join(args.model_dir, 'svm_balloon_detector.joblib')
-    joblib.dump(clf, model_path)
+    model_path = os.path.join(args.model_dir, 'linear_svm_balloon_detector.pkl')
+    with open(model_path, 'wb') as f:
+        pickle.dump(svm, f)
     logging.info(f'Model saved to {model_path}')
 
     logging.info('Experiment completed.\n')
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Balloon Object Detection using HOG and SVM')
+    parser = argparse.ArgumentParser(description='Balloon Object Detection using Manual HOG and SVM')
     parser.add_argument('--csv', type=str, default='../data/balloon-data.csv',
                         help='Path to the balloon-data.csv file')
     parser.add_argument('--images', type=str, default='../data/images/',
@@ -221,10 +191,12 @@ if __name__ == "__main__":
                         help='Directory to save the trained model')
     parser.add_argument('--log', type=str, default='../logs/experiment_log.txt',
                         help='Path to the log file')
-    parser.add_argument('--C', type=float, default=0.01,
+    parser.add_argument('--lr', type=float, default=0.001,
+                        help='Learning rate for SVM')
+    parser.add_argument('--lambda_param', type=float, default=0.01,
                         help='Regularization parameter for SVM')
-    parser.add_argument('--kernel', type=str, default='linear',
-                        help='Kernel type for SVM')
+    parser.add_argument('--n_iters', type=int, default=1000,
+                        help='Number of iterations for SVM training')
     args = parser.parse_args()
 
     # Create directories if they don't exist
