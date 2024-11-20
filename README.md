@@ -35,8 +35,13 @@ object_detection_project/
 Parameters:
 
 --csv: Path to the balloon-data.csv file.
+
 --model_dir: Directory where the trained model will be saved.
+
 --log: Path to the log file.
+
 --lr: Learning rate for the SVM classifier.
+
 --lambda_param: Regularization parameter for the SVM classifier.
+
 --n_iters: Number of iterations for SVM training.
