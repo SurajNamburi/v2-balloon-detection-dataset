@@ -31,7 +31,7 @@ pip install numpy pandas opencv-python scikit-image scikit-learn joblib
 3. **Run the Program:**
    python src/object_detection.py --csv data/balloon-data.csv --images data/images/ --model_dir models/ --log logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000
 
-Parameters(UPDATE):
+Parameters:
 --lr (Learning Rate)
 --lambda_param 0.01 (Regularization Parameter)
 --n_iters 1000 (Number of Iterations)
