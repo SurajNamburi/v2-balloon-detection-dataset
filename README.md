@@ -10,5 +10,5 @@ v2-balloon-detection-dataset/ ├── annotations/ │ └── balloon-data.
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/yourusername/v2-balloon-detection-dataset.git
+   git clone https://github.com/SurajNamburi/v2-balloon-detection-dataset.git
    cd v2-balloon-detection-dataset
