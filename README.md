@@ -27,7 +27,7 @@ pip install numpy pandas opencv-python scikit-image scikit-learn joblib opencv-p
 
 
 3. **Run the Program:**
-   python src/object_detection.py --csv ../data/balloon-data.csv --model_dir ../models/ --log ../logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000
+   python python src/object_detection.py --csv data/balloon-data.csv --images data/images/ --model_dir models/ --log logs/experiment_log.txt --log logs/experiment_log.txt --C 0.01 --kernel linear
 
 Parameters:
 
