@@ -23,11 +23,11 @@ object_detection_project/
    cd v2-balloon-detection-dataset
 
 2. **Install Dependencies:**
-pip install numpy pandas opencv-python scikit-image scikit-learn joblib opencv-python requests
+```pip install numpy pandas opencv-python scikit-image scikit-learn joblib opencv-python requests```
 
 
 3. **Run the Program:**
-   python src/object_detection.py --csv data/balloon-data.csv --model_dir models/ --log logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000
+```python src/object_detection.py --csv data/balloon-data.csv --model_dir models/ --log logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000```
 
 
 Parameters:
