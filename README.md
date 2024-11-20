@@ -32,5 +32,6 @@ pip install numpy pandas opencv-python scikit-image scikit-learn joblib
    python src/object_detection.py --csv data/balloon-data.csv --images data/images/ --model_dir models/ --log logs/experiment_log.txt --lr 0.001 --lambda_param 0.01 --n_iters 1000
 
 Parameters(UPDATE):
---C: Regularization parameter for SVM. You can experiment with different values (e.g., 0.1, 1, 10) to see how it affects performance.
---kernel: Kernel type for SVM. Options include linear, rbf, poly, etc.
+--lr (Learning Rate)
+--lambda_param 0.01 (Regularization Parameter)
+--n_iters 1000 (Number of Iterations)
