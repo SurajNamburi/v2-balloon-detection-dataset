@@ -1,4 +1,4 @@
-# V2 Balloon Detection Dataset
+# Balloon Detection Using Manual HOG Feature Extraction and SVM Classification
 
 This repository contains the V2 Balloon Detection Dataset used for the Object Detection project in ML and CV classes.
 
