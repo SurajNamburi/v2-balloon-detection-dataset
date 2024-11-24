@@ -2,19 +2,6 @@
 
 This repository contains the V2 Balloon Detection Dataset used for the Object Detection project in ML and CV classes.
 
-## Dataset Structure
-
-object_detection_project/
-├── data/
-│   ├── images/
-│   └── balloon-data.csv
-├── logs/
-│   └── experiment_log.txt
-├── src/
-│   └── object_detection.py
-└── README.md
-
-
 ## How to Download and Extract
 
 1. **Clone the Repository:**
@@ -33,14 +20,14 @@ object_detection_project/
 
 Parameters:
 
---csv: Path to the balloon-data.csv file.
+--csv: Path to balloon-data.csv file.
 
---model_dir: Directory where the trained model will be saved.
+--model_dir: Directory where trained model saved.
 
---log: Path to the log file.
+--log: Log file path.
 
---lr: Learning rate for the SVM classifier.
+--lr: Learning rate.
 
---lambda_param: Regularization parameter for the SVM classifier.
+--lambda_param: Regularization parameter.
 
---n_iters: Number of iterations for SVM training.
+--n_iters: Iterations for SVM training.
